@@ -1,0 +1,42 @@
+#!/usr/bin/expect -f
+
+
+set force_conservative 0  ;# set to 1 to force conservative mode even if
+                          ;# script wasn't run conservatively originally
+
+
+set remote_user sean
+#set remote_user local
+set remote_host [lindex $argv 0];
+set user_password [lindex $argv 1];
+set sm_password [lindex $argv 2];
+set sudo_password [lindex $argv 3];
+
+set timeout 300
+spawn ssh -o StrictHostKeyChecking=no -t ${remote_user}@${remote_host}
+expect -re "password: " {
+        send "$user_password\n"
+}
+
+expect -re ".*\\$" {
+        send "sudo rpm -Uvh http://sean-satellite-server6.com/pub/katello-ca-consumer-latest.noarch.rpm"
+    #send "sudo su - sudouser\n"
+     send "\r"
+}
+
+
+expect -re "password for " {
+        send "$sudo_password\n"
+}
+
+expect -re ".*\\$" {
+        send "sudo subscription-manager register --username admin --password $sm_password --org=Default_Organization --environment=Library/Content_View_1"
+    #send "sudo su - sudouser\n"
+     send "\r"
+
+}
+expect -re ".*\\$" {
+        send "exit\n"
+}
+
+expect eof
